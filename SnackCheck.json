@@ -1,0 +1,859 @@
+{
+  "name": "SnackCheck",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nutricion-check",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -800,
+        1600
+      ],
+      "id": "6da4fb78-02c2-4fb9-89ec-a9f80215aaee",
+      "name": "Webhook-solicitud barcode",
+      "webhookId": "16cafc15-3944-45fe-9db3-cead137ace3b"
+    },
+    {
+      "parameters": {
+        "method": "=GET",
+        "url": "=https://world.openfoodfacts.org/api/v2/product/{{$json.barcode}}.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -128,
+        1408
+      ],
+      "id": "5bda3298-a244-48f8-bfe4-b8558bf31285",
+      "name": "HTTP -Llamada a Open Food Fact",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "991a4bad-9d66-4646-8839-61adf7c8e24c",
+              "name": "barcode",
+              "value": "={{ $json.body.barcode }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -576,
+        1600
+      ],
+      "id": "259b0fb5-a00f-47d5-bad1-2d93eb0c0265",
+      "name": "Asignar-variable barcode"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8273f88c-dd7c-4708-a39a-7a6049b9b533",
+              "leftValue": "={{ $json.barcode}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "44ca5cc4-7276-454f-a5bd-4f76ecd2b0e9",
+              "leftValue": "={{ $json.barcode.length}}",
+              "rightValue": 13,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "f974927b-e08a-4260-8587-7d5e7cc8248d",
+              "leftValue": "={{ /^\\d+$/.test($json.barcode) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3eafd87d-8eb7-4f8e-9a7b-1c7fa2d1f2ab",
+              "leftValue": "={{ $json.barcode}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -352,
+        1600
+      ],
+      "id": "eec1c9ef-14ff-4226-9ffc-69d46cb4a418",
+      "name": "Validar-formato barcode"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1c3e02a7-e807-440f-80ce-bdd40943ca31",
+              "leftValue": "={{ $json.barcode}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        1792
+      ],
+      "id": "d90c8cb9-f238-4709-a31c-971c17694b98",
+      "name": "Validar - barcode no existe"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"code\": \"INVALID_BARCODE\",\n  \"message\": \"Ups! Ha habido un problema con el código de barras del producto solicitado, no se ha leído correctamente. Envíanos de nuevo el código de barras de tu producto para consultar su información nutricional y obtener una valoración.\",\n  \"required_field\": \"barcode\",\n  \"requirements\": \"El código de barras es obligatorio y debe contener exactamente 13 dígitos numéricos.\",\n  \"example\": {\n    \"barcode\": \"3017620422003\"\n  }\n}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        96,
+        1696
+      ],
+      "id": "32a2f9a0-5d2f-402d-ae5c-6d6b459bea7a",
+      "name": "Error-barcode no existe"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"code\": \"INVALID_BARCODE\",\n  \"message\": \"Ups! Ha habido un problema con el código de barras del producto solicitado, tiene una longitud incorrecta. Envíanos de nuevo el código de barras de tu producto para consultar su información nutricional y obtener una valoración.\",\n  \"required_field\": \"barcode\",\n  \"requirements\": \"El código de barras es obligatorio y debe contener exactamente 13 dígitos numéricos.\",\n  \"example\": {\n    \"barcode\": \"3017620422003\"\n  }\n}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        320,
+        1696
+      ],
+      "id": "f5e68685-cd98-4263-a942-6e9122ada7fc",
+      "name": "ERROR - barcode no tiene longitud correcta"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "71370b6b-93fd-47ce-88ab-101e1adf97a6",
+              "leftValue": "={{ $json.barcode.length}}",
+              "rightValue": 13,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        96,
+        1888
+      ],
+      "id": "8f1bd0cc-d383-46c6-a8f7-cd0ae466b955",
+      "name": "VALIDAR - barcode no tiene la longitud correcta"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "33e8570e-29b4-4359-9cc5-f327dc7b2ec6",
+              "leftValue": "={{ $json.barcode}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        1984
+      ],
+      "id": "fb6b13ef-3d69-4bac-9059-c1ece06f1664",
+      "name": "VALIDAR - barcode es vacia"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"code\": \"INVALID_BARCODE\",\n  \"message\": \"Ups! Ha habido un problema con el código de barras del producto solicitado, esta vacio. Envíanos de nuevo el código de barras de tu producto para consultar su información nutricional y obtener una valoración.\",\n  \"required_field\": \"barcode\",\n  \"requirements\": \"El código de barras es obligatorio y debe contener exactamente 13 dígitos numéricos.\",\n  \"example\": {\n    \"barcode\": \"3017620422003\"\n  }\n}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        544,
+        1792
+      ],
+      "id": "76ee7548-6f84-46fb-9189-096b241c7b72",
+      "name": "ERROR - barcode esta vacia"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"code\": \"INVALID_BARCODE\",\n  \"message\": \"Ups! Ha habido un problema con el código de barras del producto solicitado, contiene algún caracter extraño. Envíanos de nuevo el código de barras de tu producto para consultar su información nutricional y obtener una valoración.\",\n  \"required_field\": \"barcode\",\n  \"requirements\": \"El código de barras es obligatorio y debe contener exactamente 13 dígitos numéricos.\",\n  \"example\": {\n    \"barcode\": \"3017620422003\"\n  }\n}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        544,
+        2080
+      ],
+      "id": "50fcec4b-18cf-473e-8315-7836dcb419d0",
+      "name": "ERROR - barcode no es numerico entero"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"code\": \"PRODUCT_NOT_FOUND\",\n  \"message\": \"No hemos encontrado este producto. Comprueba el código de barras o prueba con otro.\"\n}",
+        "options": {
+          "responseCode": 404,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        96,
+        1504
+      ],
+      "id": "4cb62832-fbcb-4e4c-97f7-0c5a9d04f1b1",
+      "name": "ERROR: Status = 0, el producto no está en la base de datos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6a0176cc-5d5b-4ed7-9c13-f23427b47d37",
+              "leftValue": "={{ $json.product.nutriments.sugars_100g }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "75740c53-569a-49f4-bd22-693423b2a616",
+              "leftValue": "={{ $json.product.nutriments.salt_100g }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6ca38c5c-e8b5-4947-a028-167497411feb",
+              "leftValue": "={{ $json.product.nutriments.fat_100g }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "aabc881b-d358-44ff-8a66-0172977296e4",
+              "leftValue": "={{ $json.product.nutriscore_grade }}",
+              "rightValue": "={{ $json.product.nutriscore_grade }}",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        96,
+        1312
+      ],
+      "id": "03ce96f9-1776-405b-be1a-931e89bc33e1",
+      "name": "VALIDAR - campos nutricionales del producto"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"code\": \"INVALID_BARCODE\",\n  \"message\": \"El producto elegido no tiene suficiente información nutricional en nuestra base de datos para darle información del mimsmo. Envíanos un nuevo código de barras para consultar su información nutricional y obtener una valoración.\",\n  \"required_field\": \"barcode\",\n  \"requirements\": \"El código de barras es obligatorio y debe contener exactamente 13 dígitos numéricos.\",\n  \"example\": {\n    \"barcode\": \"3017620422003\"\n  }\n}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        320,
+        1216
+      ],
+      "id": "d2a73be6-9792-4818-b291-89c466c06615",
+      "name": "ERROR: el producto no tiene suficientes campos nutricionales"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1064,
+        1736
+      ],
+      "id": "c747b2fc-417a-4ecd-8b4f-3dd8eba990ff",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "e4VeA0zWtD9aDJVk",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Actúa como un asistente que explica la información nutricional de los productos de forma sencilla, breve y objetiva.  Redacta un único párrafo utilizando los datos proporcionados.  Datos del producto:  Nombre: {{ $json.nombre }}  Marca: {{ $json.marca }}  Nutri-Score original: {{ $json.nutriScore }}  Puntuación Nutri-Score: {{ $json.nivel_nutriScore }}  Puntuación del semáforo: {{ $json.conteo_semaforo }}  Puntuación de preocupación: {{ $json.preocupacion }}  Veredicto calculado: {{ $json.nivel_veredicto }}  Instrucciones:  Identifica el producto por su nombre y marca.  Explica brevemente qué indican las puntuaciones y el veredicto calculado.  Eso sí, el tono del mensaje tiene que ser adaptarse al nivel de verdicto, más alentador cuando el producto es saludable, menos si es moderado y cauteloso cuando sea no saludable.  Utiliza un lenguaje natural, comprensible y no alarmista.  No inventes datos nutricionales.  Si faltan datos, indícalo cuando sea relevante.  No cambies el veredicto calculado por el flujo.  Devuelve únicamente el párrafo final, sin títulos ni listas.",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        992,
+        1504
+      ],
+      "id": "0ebef911-c77d-4c98-8d23-182adbce2581",
+      "name": "IA - Generador de texto verdicto"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "706abc08-9c75-4631-b0ae-c067f88da10e",
+              "name": "=veredicto_texto",
+              "value": "={{\n ' ANÁLISIS NUTRICIONAL: ' +  $('Asignar-variables').first().json.nombre +\n  '\\n' +\n  (\n    $('Calcular Regla Semaforo').first().json.nivel_veredicto === 'saludable' ? '🟢' :\n    $('Calcular Regla Semaforo').first().json.nivel_veredicto === 'moderado' ? '🟠' :\n    $('Calcular Regla Semaforo').first().json.nivel_veredicto === 'no saludable' ? '🔴' : '⚪'\n  ) +\n   'Marca: ' + ( $('Asignar-variables').first().json.marca ) +\n  '\\n\\n' +\n  '📊 INDICADORES CLAVE\\n' +\n  'Nutri-Score: ' + ($('Asignar-variables').first().json.nutriScore) + '\\n' +\n  'Semáforo nutricional: ' + ($('Calculo_semaforo_nivelNS_Preocupacion').first().json.conteo_semaforo) + '\\n' +\n  'Nivel de preocupación: ' + ($('Calculo_semaforo_nivelNS_Preocupacion').first().json.preocupacion) + '/3\\n' +\n  '\\n⚖️ VEREDICTO: ' + ($('Calcular Regla Semaforo').first().json.nivel_veredicto) +\n  '\\n\\n📝 INTERPRETACIÓN\\n' +  ( $json.text )\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        1504
+      ],
+      "id": "dcd65625-ad57-4049-9625-726cd4587ef9",
+      "name": "DAR Formato verdicto"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.veredicto_texto }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Context-type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        1504
+      ],
+      "id": "5f6cdf1d-61b3-496d-91da-ccbf5e1a39d9",
+      "name": "RESPONDER - veredicto final"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ae604f1-18c4-409c-b41e-5b2fdde9db92",
+              "name": "=nombre",
+              "value": "={{ $json.product.product_name }}",
+              "type": "string"
+            },
+            {
+              "id": "783bc389-0d32-4265-bbbd-3c7d770dc77d",
+              "name": "=marca",
+              "value": "={{ $json.product.brands }}",
+              "type": "string"
+            },
+            {
+              "id": "7cb5fee9-704f-4a5d-8c85-e056c6b824af",
+              "name": "nutriScore",
+              "value": "={{ $json.product.nutriscore_grade }}",
+              "type": "string"
+            },
+            {
+              "id": "4ecda7d6-e6dd-457a-88aa-3d85659f4d37",
+              "name": "=azucar",
+              "value": "={{ $json.product.nutriments.sugars_100g }}",
+              "type": "number"
+            },
+            {
+              "id": "3714fedc-57b9-432b-a9b3-e6767e6ddf6b",
+              "name": "=sal",
+              "value": "={{ $json.product.nutriments.salt_100g }}",
+              "type": "number"
+            },
+            {
+              "id": "4b6ba8fa-2209-482d-8c80-71ce6a050506",
+              "name": "=grasa",
+              "value": "={{ $json.product.nutriments.fat_100g }}",
+              "type": "number"
+            },
+            {
+              "id": "359e8824-a2c4-42c9-a3da-0867b39eadae",
+              "name": "=kalorias",
+              "value": "={{ $json.product.nutriments['energy-kcal_100g'] }}",
+              "type": "number"
+            },
+            {
+              "id": "d54016be-a478-452a-a1e9-3367ba2e9455",
+              "name": "=nivel_azucar",
+              "value": "={{ Number($json.product.nutriments.sugars_100g ?? 0) < 5 ? 0 : Number($json.product.nutriments.sugars_100g ?? 0) <= 22.5 ? 1 : 2 }}",
+              "type": "number"
+            },
+            {
+              "id": "a9d969ea-c7f3-49b9-afb7-1f938ffe496d",
+              "name": "=nivel_sal",
+              "value": "={{ Number($json.product.nutriments.salt_100g ?? 0) > 1.5 ? 2 : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "2e7e3533-dda7-4360-bef2-9758e0f60317",
+              "name": "=nivel_grasa",
+              "value": "={{ Number($json.product.nutriments.fat_100g ?? 0) > 17.5 ? 2 : 0 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        320,
+        1504
+      ],
+      "id": "b2595ae7-1313-4964-85e1-701413ca9636",
+      "name": "Asignar-variables"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener los niveles de azúcar, sal y grasa\nconst nivelAzucar = Number($json.nivel_azucar);\nconst nivelSal = Number($json.nivel_sal);\nconst nivelGrasa = Number($json.nivel_grasa);\n\n// 1. Calcular conteo_semaforo\nconst conteo_semaforo =  nivelAzucar + nivelSal + nivelGrasa;\n\n// 2. Calcular nivel_nutriScore\nconst nutriScoreGrade = String($json.nutriScore ?? '').toLowerCase();\n\nlet nivel_nutriScore;\n\nif (['a', 'b', ''].includes(nutriScoreGrade)) {  nivel_nutriScore = 0;} \n  else if (nutriScoreGrade === 'c') {nivel_nutriScore = 1;} \n  else if (['d', 'e'].includes(nutriScoreGrade)) {nivel_nutriScore = 2;}\n  else {nivel_nutriScore = 0;}\n\n// 3. Calcular Puntuacion_preocupacion (máximo 3)\nconst preocupacion = Math.min(conteo_semaforo,3);\n\n// Devolver todos los campos originales y los nuevos\nreturn [\n  {\n    json: {\n      ...$json,\n      conteo_semaforo,\n      nivel_nutriScore,\n      preocupacion\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        1504
+      ],
+      "id": "cf4e446b-0e87-4b35-940f-1bb4dceab980",
+      "name": "Calculo_semaforo_nivelNS_Preocupacion"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "623110d2-0599-4460-9cd4-274877c8a243",
+              "name": "nivel_veredicto",
+              "value": "={{   (Number($json.nutriScore_valor) + Number($json.conteo_semaforo)) <= 1 ? 'saludable' :   (Number($json.nutriScore_valor) + Number($json.conteo_semaforo)) <= 3 ? 'moderado' :   'no saludable' }}",
+              "type": "string"
+            },
+            {
+              "id": "b18728cf-70d5-4d02-b54e-9cf71e4d6a58",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        768,
+        1504
+      ],
+      "id": "eeceb85c-d98f-4dd8-b94c-f5cc0eb278f8",
+      "name": "Calcular Regla Semaforo"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook-solicitud barcode": {
+      "main": [
+        [
+          {
+            "node": "Asignar-variable barcode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP -Llamada a Open Food Fact": {
+      "main": [
+        [
+          {
+            "node": "VALIDAR - campos nutricionales del producto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ERROR: Status = 0, el producto no está en la base de datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asignar-variable barcode": {
+      "main": [
+        [
+          {
+            "node": "Validar-formato barcode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar-formato barcode": {
+      "main": [
+        [
+          {
+            "node": "HTTP -Llamada a Open Food Fact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar - barcode no existe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar - barcode no existe": {
+      "main": [
+        [
+          {
+            "node": "Error-barcode no existe",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "VALIDAR - barcode no tiene la longitud correcta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VALIDAR - barcode no tiene la longitud correcta": {
+      "main": [
+        [
+          {
+            "node": "ERROR - barcode no tiene longitud correcta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "VALIDAR - barcode es vacia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VALIDAR - barcode es vacia": {
+      "main": [
+        [
+          {
+            "node": "ERROR - barcode esta vacia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ERROR - barcode no es numerico entero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VALIDAR - campos nutricionales del producto": {
+      "main": [
+        [
+          {
+            "node": "ERROR: el producto no tiene suficientes campos nutricionales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Asignar-variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "IA - Generador de texto verdicto",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA - Generador de texto verdicto": {
+      "main": [
+        [
+          {
+            "node": "DAR Formato verdicto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DAR Formato verdicto": {
+      "main": [
+        [
+          {
+            "node": "RESPONDER - veredicto final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asignar-variables": {
+      "main": [
+        [
+          {
+            "node": "Calculo_semaforo_nivelNS_Preocupacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculo_semaforo_nivelNS_Preocupacion": {
+      "main": [
+        [
+          {
+            "node": "Calcular Regla Semaforo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Regla Semaforo": {
+      "main": [
+        [
+          {
+            "node": "IA - Generador de texto verdicto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9acf56a7-113d-4a9e-92d4-a83344195fab",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c40077635fc635f124efb7fafd9d42ae9ff521ce681c3bcb10cf5ac43f19efe8"
+  },
+  "nodeGroups": [],
+  "id": "hbpBRhflE1hW8Nbj",
+  "tags": []
+}
